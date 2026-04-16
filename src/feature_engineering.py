@@ -3,6 +3,7 @@ import logging
 import pandas as pd
 import yaml
 from sklearn.feature_extraction.text import TfidfVectorizer
+import yaml
 
 log_dir = 'logs'
 os.makedirs(log_dir, exist_ok=True)
@@ -24,6 +25,23 @@ file_handler.setFormatter(formatter)
 
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
+
+def load_params(params_path:str):
+    """Load parameters from a YAML file"""
+    try:
+        with open(params_path, 'r') as file:
+            params = yaml.safe_load(file)
+        logger.debug("Parameters recieved from %s", params_path)
+        return params
+    except FileNotFoundError:
+        logger.error("File not found: %s", params_path)
+        raise
+    except yaml.YAMLError as e:
+        logger.error("YAML error: %s", e)
+        raise
+    except Exception as e:
+        logger.error("Unexpected error: %s", e)
+        raise
 
 def load_data(file_path):
     """
@@ -54,7 +72,7 @@ def apply_tfidf(train_data:pd.DataFrame, test_data:pd.DataFrame, max_features:in
         y_test = test_data['target'].values
 
         X_train_bow = vectorizer.fit_transform(X_train)
-        X_test_bow = vectorizer.fit_transform(X_test)
+        X_test_bow = vectorizer.transform(X_test)
 
         train_df = pd.DataFrame(X_train_bow.toarray())
         train_df['label']=y_train
@@ -84,7 +102,9 @@ def save_data(df:pd.DataFrame, file_path:str):
 
 def main():
     try:
-        max_features = 50
+        params = load_params(params_path='params.yaml')
+        max_features = params['feature_engineering']['max_features']
+        # max_features = 50
 
         train_data = load_data('./data/interim/train_processed_data.csv')
         test_data = load_data('./data/interim/test_processed_data.csv')

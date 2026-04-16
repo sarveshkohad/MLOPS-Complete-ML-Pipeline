@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import pickle 
 from sklearn.ensemble import RandomForestClassifier
+import yaml
+
 
 log_dir = 'logs'
 os.makedirs(log_dir, exist_ok=True)
@@ -24,6 +26,23 @@ file_handler.setFormatter(formatter)
 
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
+
+def load_params(params_path:str):
+    """Loading parameters from a YAML file"""
+    try:
+        with open(params_path, 'r') as file:
+            params = yaml.safe_load(file)
+        logger.debug("Parameters retrieved from %s", params_path)
+        return params
+    except FileNotFoundError:
+        logger.error("File not found: %s", params_path)
+        raise
+    except yaml.YAMLError as e:
+        logger.error("YAML Error: %s", e)
+        raise
+    except Exception as e:
+        logger.error("Unexpected error: %s", e)
+        raise
 
 def load_data(file_path:str):
     """"
@@ -56,8 +75,8 @@ def train_model(X_train:np.ndarray, y_train:np.ndarray, params:dict):
         logger.debug("Initializing RandomForest model with parameters: %s", params)
         clf = RandomForestClassifier(n_estimators=params['n_estimators'], random_state=params['random_state'])
         logger.debug("Model training started with %d samples ", X_train.shape[0])
-        logger.debug("NaNs in X_train: %s", np.isnan(X_train).sum())
-        logger.debug("NaNs in y_train: %s", np.isnan(y_train).sum())
+        # logger.debug("NaNs in X_train: %s", np.isnan(X_train).sum())
+        # logger.debug("NaNs in y_train: %s", np.isnan(y_train).sum())
         clf.fit(X_train, y_train)
         logger.debug("Model training completed")
 
@@ -91,7 +110,9 @@ def save_model(model, file_path):
 
 def main():
     try:
-        params = {'n_estimators': 25, 'random_state': 2}
+        params = load_params('params.yaml')['model_building']
+        # params = {'n_estimators': 25, 'random_state': 2}
+
         train_data = load_data("./data/processed/train_tfidf.csv")
         X_train = train_data.iloc[:,:-1].values
         y_train = train_data.iloc[:,-1].values
