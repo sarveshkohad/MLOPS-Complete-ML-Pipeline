@@ -16,7 +16,7 @@ stages:
     - data/interim
   feature_engineering:
     cmd: python src/feature_engineering.py
-    deps: 
+    deps:
     - data/interim
     - src/feature_engineering.py
     params:
@@ -40,3 +40,8 @@ stages:
     - src/model_evaluation.py
     metrics:
     - reports/metrics.json
+params:
+- dvclive/params.yaml
+plots:
+- dvclive/plots/metrics:
+    x: step
